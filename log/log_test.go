@@ -44,7 +44,7 @@ func TestNew(t *testing.T) {
 		assertLogRecord(t, b, map[string]interface{}{
 			"logger": "name",
 			"level":  "4",
-			"caller": "log/log_test.go:41",
+			"caller": "log/log_test.go:42",
 			"msg":    "Hello world!",
 			"foo":    "bar",
 		})

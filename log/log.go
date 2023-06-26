@@ -50,7 +50,17 @@ func New(w io.Writer, opts ...option) logr.Logger {
 
 // Sync flushes buffered logs.
 func Sync(logger logr.Logger) {
-	if logger, ok := logger.GetSink().(zapr.Underlier); ok {
-		_ = logger.GetUnderlying().Core().Sync()
+	if zl, ok := Underlying(logger); ok {
+		zl.Core().Sync()
 	}
+}
+
+// Underlying returns the zap logger used as a logr sink.
+func Underlying(logger logr.Logger) (*zap.Logger, bool) {
+	zl, ok := logger.GetSink().(zapr.Underlier)
+	if !ok {
+		return nil, false
+	}
+
+	return zl.GetUnderlying(), true
 }

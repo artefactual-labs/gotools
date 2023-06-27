@@ -40,10 +40,11 @@ func New(w io.Writer, opts ...option) logr.Logger {
 
 	var levelEnabler zapcore.LevelEnabler = zap.NewAtomicLevelAt(zapcore.Level(-options.level))
 
-	core := zapcore.NewCore(encoder, writer, levelEnabler)
-	logger := zap.New(core).
-		Named(options.name).
-		WithOptions(zap.WithCaller(true))
+	logger := zap.New(
+		zapcore.NewCore(encoder, writer, levelEnabler),
+		zap.WithCaller(true),
+		zap.AddStacktrace(zap.ErrorLevel),
+	).Named(options.name)
 
 	return zapr.NewLogger(logger)
 }

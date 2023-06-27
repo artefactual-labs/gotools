@@ -5,3 +5,5 @@
 This repository provides the `go.artefactual.dev/tools` module, comprising
 various tools and packages mostly for internal purposes. Use the "Go reference"
 link above for more information about any package.
+
+The API is still **experimental**, breaking changes MAY occur.

@@ -1,9 +1,12 @@
 package log
 
+import "go.uber.org/zap/zapcore"
+
 type options struct {
 	name  string
 	level int
 	debug bool
+	clock zapcore.Clock
 }
 
 type option interface {
@@ -46,4 +49,18 @@ func (o debugOption) apply(opts *options) {
 // WithDebug configures the logger for development environments.
 func WithDebug(enabled bool) option {
 	return debugOption(enabled)
+}
+
+type clockOption struct {
+	clock zapcore.Clock
+}
+
+func (o clockOption) apply(opts *options) {
+	opts.clock = o.clock
+}
+
+// WithClock configures the clock used by the logger to determine the current
+// time for logged entries. Defaults to the system clock with time.Now.
+func WithClock(clock zapcore.Clock) option {
+	return clockOption{clock}
 }

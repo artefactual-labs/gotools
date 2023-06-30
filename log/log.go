@@ -1,3 +1,19 @@
+// Package log provides simple functions to build an application logger based
+// on the [logr.Logger] interface and the [zap] logging library.
+//
+// Use [New] to build the logger and [Sync] to flush buffered logs, e.g.;
+//
+//	logger := logr.New(os.Stderr)
+//	defer log.Sync(logger)
+//	logger.Info("Hello!", "count", 10)
+//
+// [New] accepts multiple functional options, e.g. use [WithLevel] to specify
+// the verbosity of the logger:
+//
+//	logger := logr.New(os.Stderr, log.WithLevel(10))
+//
+// [logr.Logger]: https://github.com/go-logr/logr
+// [zap]: https://github.com/uber-go/zap
 package log
 
 import (
@@ -9,9 +25,12 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// New returns a new logger based on the logr interface and the zap logging library.
+// New returns a new logger based on the logr interface and the zap logging
+// library.
 func New(w io.Writer, opts ...option) logr.Logger {
-	options := options{}
+	options := options{
+		clock: zapcore.DefaultClock,
+	}
 	for _, o := range opts {
 		o.apply(&options)
 	}
@@ -44,6 +63,7 @@ func New(w io.Writer, opts ...option) logr.Logger {
 		zapcore.NewCore(encoder, writer, levelEnabler),
 		zap.WithCaller(true),
 		zap.AddStacktrace(zap.ErrorLevel),
+		zap.WithClock(options.clock),
 	).Named(options.name)
 
 	return zapr.NewLogger(logger)

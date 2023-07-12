@@ -3,10 +3,18 @@ package log
 import "go.uber.org/zap/zapcore"
 
 type options struct {
-	name  string
-	level int
-	debug bool
-	clock zapcore.Clock
+	name     string
+	level    int
+	debug    bool
+	clock    zapcore.Clock
+	addStack bool
+}
+
+func defaults() options {
+	return options{
+		clock:    zapcore.DefaultClock,
+		addStack: true,
+	}
 }
 
 type option interface {
@@ -63,4 +71,16 @@ func (o clockOption) apply(opts *options) {
 // time for logged entries. Defaults to the system clock with time.Now.
 func WithClock(clock zapcore.Clock) option {
 	return clockOption{clock}
+}
+
+type addStackOption bool
+
+func (o addStackOption) apply(opts *options) {
+	opts.addStack = bool(o)
+}
+
+// WithStacktrace configures the logger to record error stacktraces.
+// It is enabled by default.
+func WithStacktrace(enabled bool) option {
+	return addStackOption(enabled)
 }

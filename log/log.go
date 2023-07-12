@@ -28,9 +28,7 @@ import (
 // New returns a new logger based on the logr interface and the zap logging
 // library.
 func New(w io.Writer, opts ...option) logr.Logger {
-	options := options{
-		clock: zapcore.DefaultClock,
-	}
+	options := defaults()
 	for _, o := range opts {
 		o.apply(&options)
 	}
@@ -55,16 +53,21 @@ func New(w io.Writer, opts ...option) logr.Logger {
 		}
 	}
 
-	var writer zapcore.WriteSyncer = zapcore.Lock(zapcore.AddSync(w))
+	core := zapcore.NewCore(
+		encoder,
+		zapcore.Lock(zapcore.AddSync(w)),
+		zap.NewAtomicLevelAt(zapcore.Level(-options.level)),
+	)
 
-	var levelEnabler zapcore.LevelEnabler = zap.NewAtomicLevelAt(zapcore.Level(-options.level))
-
-	logger := zap.New(
-		zapcore.NewCore(encoder, writer, levelEnabler),
+	zapOpts := []zap.Option{
 		zap.WithCaller(true),
-		zap.AddStacktrace(zap.ErrorLevel),
 		zap.WithClock(options.clock),
-	).Named(options.name)
+	}
+	if options.addStack {
+		zapOpts = append(zapOpts, zap.AddStacktrace(zap.ErrorLevel))
+	}
+
+	logger := zap.New(core, zapOpts...).Named(options.name)
 
 	return zapr.NewLogger(logger)
 }

@@ -52,15 +52,30 @@ func TestNew(t *testing.T) {
 		})
 	})
 
-	t.Run("Logs errors including stack qtrace", func(t *testing.T) {
+	t.Run("Logs errors including stacktrace", func(t *testing.T) {
 		var b bytes.Buffer
 
 		logger := log.New(&b)
 		logger.Error(io.EOF, "End of file.", "foo", "bar")
 
-		assertErrorRecord(t, b, map[string]interface{}{
+		assertErrorRecordWithStacktrace(t, b, map[string]interface{}{
 			"level":  "2",
 			"caller": "log/log_test.go:59",
+			"error":  "EOF",
+			"msg":    "End of file.",
+			"foo":    "bar",
+		})
+	})
+
+	t.Run("Logs errors without stacktrace", func(t *testing.T) {
+		var b bytes.Buffer
+
+		logger := log.New(&b, log.WithStacktrace(false))
+		logger.Error(io.EOF, "End of file.", "foo", "bar")
+
+		assertErrorRecordWithoutStacktrace(t, b, map[string]interface{}{
+			"level":  "2",
+			"caller": "log/log_test.go:74",
 			"error":  "EOF",
 			"msg":    "End of file.",
 			"foo":    "bar",
@@ -77,16 +92,30 @@ func assertInfoRecord(t *testing.T, b bytes.Buffer, keysAndValues map[string]int
 	assert.DeepEqual(t, entry, keysAndValues, ignoreTimestampField)
 }
 
-func assertErrorRecord(t *testing.T, b bytes.Buffer, keysAndValues map[string]interface{}) {
+func assertErrorRecordWithoutStacktrace(t *testing.T, b bytes.Buffer, keysAndValues map[string]interface{}) {
 	t.Helper()
 
 	entry := map[string]interface{}{}
 	err := json.Unmarshal(b.Bytes(), &entry)
 	assert.NilError(t, err)
 
-	// Must include a stack trace.
+	// Must not include a stacktrace.
+	_, ok := entry["stacktrace"]
+	assert.Assert(t, !ok, "Stacktrace is included.")
+
+	assert.DeepEqual(t, entry, keysAndValues, ignoreTimestampField)
+}
+
+func assertErrorRecordWithStacktrace(t *testing.T, b bytes.Buffer, keysAndValues map[string]interface{}) {
+	t.Helper()
+
+	entry := map[string]interface{}{}
+	err := json.Unmarshal(b.Bytes(), &entry)
+	assert.NilError(t, err)
+
+	// Must include a stacktrace.
 	st, ok := entry["stacktrace"]
-	assert.Assert(t, ok, "Stack trace is missing.")
+	assert.Assert(t, ok, "Stacktrace is missing.")
 	assert.Assert(t, cmp.Contains(st, "testing.tRunner"))
 	delete(entry, "stacktrace")
 

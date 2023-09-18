@@ -14,7 +14,7 @@ type eqMatcher struct {
 	opts []cmp.Option
 }
 
-// Eq is simiar to gomock.Eq but uses go-cmp, accepts options and returns a
+// Eq is similar to gomock.Eq but uses go-cmp, accepts options and returns a
 // human-readable report of the differences between the compared values.
 func Eq(want interface{}, opts ...cmp.Option) eqMatcher {
 	return eqMatcher{
@@ -41,4 +41,16 @@ func (eq eqMatcher) String() string {
 // another. It uses [cmpopts.EquateApproxtime].
 func EquateNearlySameTime() cmp.Option {
 	return cmpopts.EquateApproxTime(time.Second)
+}
+
+// Recent returns a matcher that evaluates to true if the parameter passed to
+// the mock function is a [time.Time] representing a clock reading from within
+// the last second.
+func Recent() eqMatcher {
+	return eqMatcher{
+		want: time.Now(),
+		opts: []cmp.Option{
+			EquateNearlySameTime(),
+		},
+	}
 }

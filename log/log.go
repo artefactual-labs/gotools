@@ -75,7 +75,7 @@ func New(w io.Writer, opts ...option) logr.Logger {
 // Sync flushes buffered logs.
 func Sync(logger logr.Logger) {
 	if zl, ok := Underlying(logger); ok {
-		zl.Core().Sync()
+		_ = zl.Core().Sync()
 	}
 }
 

@@ -88,3 +88,17 @@ func TestEq(t *testing.T) {
 		assert.Equal(t, m.Matches(got), false)
 	})
 }
+
+func TestRecent(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Matches time within second", func(t *testing.T) {
+		m := mockutil.Recent()
+		assert.Equal(t, m.Matches(time.Now()), true)
+	})
+
+	t.Run("Reports non-recent time", func(t *testing.T) {
+		m := mockutil.Recent()
+		assert.Equal(t, m.Matches(time.Now().Add(time.Hour)), false)
+	})
+}

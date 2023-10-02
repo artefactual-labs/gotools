@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"go.temporal.io/sdk/activity"
+	temporalsdk_activity "go.temporal.io/sdk/activity"
 )
 
 type AutoHeartbeat struct {
@@ -18,7 +18,7 @@ type AutoHeartbeat struct {
 // Temporal is planning to provide auto-heartbeating capabilities in the future,
 // see https://github.com/temporalio/features/issues/229 for more.
 func StartAutoHeartbeat(ctx context.Context) *AutoHeartbeat {
-	heartbeatTimeout := activity.GetInfo(ctx).HeartbeatTimeout
+	heartbeatTimeout := temporalsdk_activity.GetInfo(ctx).HeartbeatTimeout
 	if heartbeatTimeout == 0 {
 		return nil
 	}
@@ -31,7 +31,7 @@ func StartAutoHeartbeat(ctx context.Context) *AutoHeartbeat {
 		for {
 			select {
 			case <-ticker.C:
-				activity.RecordHeartbeat(ctx)
+				temporalsdk_activity.RecordHeartbeat(ctx)
 			case <-done:
 				return
 			}

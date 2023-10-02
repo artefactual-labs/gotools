@@ -7,7 +7,6 @@ on:
   pull_request:
     branches:
       - "*"
-
 jobs:
   test:
     strategy:
@@ -21,6 +20,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: stable
       - name: Restore cache
         uses: actions/cache@v3
         with:
@@ -36,13 +39,18 @@ jobs:
         env:
           GOARCH: ${{ matrix.goarch }}
   apidiff:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-22.04
+    if: (github.event.action && 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'breaking-change'))
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: stable
       - name: Restore cache
         uses: actions/cache@v3
         with:
@@ -55,3 +63,21 @@ jobs:
             ${{ github.job }}-${{ runner.os }}-${{ matrix.goarch }}-${{ matrix.testflags }}-go-
       - name: Run api-diff
         uses: joelanford/go-apidiff@main
+  lint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          cache: false
+          go-version: stable
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          install-mode: "binary"
+          args: --timeout=10m

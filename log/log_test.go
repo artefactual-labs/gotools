@@ -7,9 +7,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"go.artefactual.dev/tools/log"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
+
+	"go.artefactual.dev/tools/log"
 )
 
 // Custom cmp.Option to ignore the timestamp entry in log records.
@@ -28,7 +29,7 @@ func TestNew(t *testing.T) {
 
 		assertInfoRecord(t, b, map[string]interface{}{
 			"level":  "0",
-			"caller": "log/log_test.go:27",
+			"caller": "log/log_test.go:28",
 			"msg":    "Hello world!",
 			"foo":    "bar",
 		})
@@ -46,7 +47,7 @@ func TestNew(t *testing.T) {
 		assertInfoRecord(t, b, map[string]interface{}{
 			"logger": "name",
 			"level":  "4",
-			"caller": "log/log_test.go:44",
+			"caller": "log/log_test.go:45",
 			"msg":    "Hello world!",
 			"foo":    "bar",
 		})
@@ -60,7 +61,7 @@ func TestNew(t *testing.T) {
 
 		assertErrorRecordWithStacktrace(t, b, map[string]interface{}{
 			"level":  "2",
-			"caller": "log/log_test.go:59",
+			"caller": "log/log_test.go:60",
 			"error":  "EOF",
 			"msg":    "End of file.",
 			"foo":    "bar",
@@ -75,7 +76,7 @@ func TestNew(t *testing.T) {
 
 		assertErrorRecordWithoutStacktrace(t, b, map[string]interface{}{
 			"level":  "2",
-			"caller": "log/log_test.go:74",
+			"caller": "log/log_test.go:75",
 			"error":  "EOF",
 			"msg":    "End of file.",
 			"foo":    "bar",

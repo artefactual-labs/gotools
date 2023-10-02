@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"go.temporal.io/sdk/activity"
-	"go.temporal.io/sdk/converter"
-	"go.temporal.io/sdk/testsuite"
-	"go.temporal.io/sdk/workflow"
+	temporalsdk_activity "go.temporal.io/sdk/activity"
+	temporalsdk_converter "go.temporal.io/sdk/converter"
+	temporalsdk_testsuite "go.temporal.io/sdk/testsuite"
+	temporalsdk_workflow "go.temporal.io/sdk/workflow"
 	"gotest.tools/v3/assert"
 
 	"go.artefactual.dev/tools/temporal"
@@ -20,7 +20,7 @@ func TestAutoHeartbeat(t *testing.T) {
 	// Heartbeat listener.
 	received := make(chan struct{}, 10)
 	var calls []string
-	l := func(info *activity.Info, details converter.EncodedValues) {
+	l := func(info *temporalsdk_activity.Info, details temporalsdk_converter.EncodedValues) {
 		calls = append(calls, info.ActivityID)
 		received <- struct{}{}
 	}
@@ -38,15 +38,15 @@ func TestAutoHeartbeat(t *testing.T) {
 		return nil
 	}
 
-	w := func(ctx workflow.Context) error {
-		ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{
+	w := func(ctx temporalsdk_workflow.Context) error {
+		ctx = temporalsdk_workflow.WithActivityOptions(ctx, temporalsdk_workflow.ActivityOptions{
 			StartToCloseTimeout: time.Second,
 			HeartbeatTimeout:    time.Millisecond,
 		})
-		return workflow.ExecuteActivity(ctx, a).Get(ctx, nil)
+		return temporalsdk_workflow.ExecuteActivity(ctx, a).Get(ctx, nil)
 	}
 
-	ts := &testsuite.WorkflowTestSuite{}
+	ts := &temporalsdk_testsuite.WorkflowTestSuite{}
 	env := ts.NewTestWorkflowEnvironment()
 	env.RegisterWorkflow(w)
 	env.RegisterActivity(a)

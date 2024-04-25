@@ -13,7 +13,7 @@ import (
 	bucket "go.artefactual.dev/tools/bucket"
 )
 
-func TestWithConfig(t *testing.T) {
+func TestNewWithConfig(t *testing.T) {
 	t.Parallel()
 
 	type test struct {
@@ -96,7 +96,7 @@ func TestWithConfig(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			b, err := bucket.WithConfig(context.Background(), tc.config)
+			b, err := bucket.NewWithConfig(context.Background(), tc.config)
 			if b != nil {
 				defer b.Close()
 			}

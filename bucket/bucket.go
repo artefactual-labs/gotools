@@ -35,10 +35,10 @@ type Config struct {
 	PathStyle bool
 }
 
-// WithConfig opens a bucket based on the provided configuration. It defaults to
-// using AWS SDK v2 via s3blob.OpenBucketV2 unless the URL field is specified,
-// in which case it uses blob.OpenBucket.
-func WithConfig(ctx context.Context, c *Config) (*blob.Bucket, error) {
+// NewWithConfig opens a bucket based on the provided configuration. It defaults
+// to using AWS SDK v2 via s3blob.OpenBucketV2 unless the URL field is
+// specified, in which case it uses blob.OpenBucket.
+func NewWithConfig(ctx context.Context, c *Config) (*blob.Bucket, error) {
 	if c == nil {
 		return nil, errors.New("config is undefined")
 	}

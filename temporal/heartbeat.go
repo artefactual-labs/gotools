@@ -23,8 +23,14 @@ func StartAutoHeartbeat(ctx context.Context) *AutoHeartbeat {
 		return nil
 	}
 
-	// We'll heartbeat twice as often as timeout (this is throttled anyways).
-	ticker := time.NewTicker(heartbeatTimeout / 2)
+	// We want to heartbeat three times as often as timeout (this is throttled anyways).
+	heartbeatInterval := heartbeatTimeout / 3
+	// We don't want to heartbeat in intervals higher than 10 seconds.
+	maxHeartBeatInterval := time.Second * 10
+	if heartbeatInterval > maxHeartBeatInterval {
+		heartbeatInterval = maxHeartBeatInterval
+	}
+	ticker := time.NewTicker(heartbeatInterval)
 	done := make(chan struct{})
 	go func() {
 		defer ticker.Stop()

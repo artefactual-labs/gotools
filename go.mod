@@ -1,6 +1,7 @@
 module go.artefactual.dev/tools
 
-go 1.21
+// We follow the upstream release policy: https://go.dev/doc/devel/release#policy
+go 1.20
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.26.1

@@ -7,13 +7,29 @@ import (
 	temporalsdk_activity "go.temporal.io/sdk/activity"
 )
 
+// maxInterval sets the heartbeat interval cap. Changes to this should only be
+// done in tests.
+var maxInterval = time.Second * 10
+
 type AutoHeartbeat struct {
 	ticker *time.Ticker
 	done   chan struct{}
 }
 
-// StartAutoHeartbeat is an auto-heartbeat helper that chooses the heartbeat
-// frequency based on the activity hearbeat timeout configuration.
+// StartAutoHeartbeat starts an auto-heartbeat helper for activities.
+//
+// The interval is chosen to be one-third of the configured timeout to ensure
+// frequent heartbeats. It is capped at a maximum of 10s to prevent the interval
+// from being too large.
+//
+//	func Activity(ctx context.Context) error {
+//		h := temporal.StartAutoHeartbeat(ctx)
+//		defer h.Stop()
+//
+//		// ... long running code.
+//
+//		return nil
+//	}
 //
 // Temporal is planning to provide auto-heartbeating capabilities in the future,
 // see https://github.com/temporalio/features/issues/229 for more.
@@ -23,13 +39,12 @@ func StartAutoHeartbeat(ctx context.Context) *AutoHeartbeat {
 		return nil
 	}
 
-	// We want to heartbeat three times as often as timeout (this is throttled anyways).
+	// No risk in having a very small interval since Temporal throttles it anyways.
 	heartbeatInterval := heartbeatTimeout / 3
-	// We don't want to heartbeat in intervals higher than 10 seconds.
-	maxHeartBeatInterval := time.Second * 10
-	if heartbeatInterval > maxHeartBeatInterval {
-		heartbeatInterval = maxHeartBeatInterval
+	if heartbeatInterval > maxInterval {
+		heartbeatInterval = maxInterval
 	}
+
 	ticker := time.NewTicker(heartbeatInterval)
 	done := make(chan struct{})
 	go func() {

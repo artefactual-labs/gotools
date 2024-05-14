@@ -1,5 +1,5 @@
 // Package log provides simple functions to build an application logger based
-// on the [logr.Logger] interface and the [zap] logging library.
+// on the logr.Logger interface and the zap logging library.
 //
 // Use [New] to build the logger and [Sync] to flush buffered logs, e.g.;
 //
@@ -12,7 +12,9 @@
 //
 //	logger := logr.New(os.Stderr, log.WithLevel(10))
 //
-// [logr.Logger]: https://github.com/go-logr/logr
+// Visit the [logr] and [zap] projects for more details.
+//
+// [logr]: https://github.com/go-logr/logr
 // [zap]: https://github.com/uber-go/zap
 package log
 

@@ -39,12 +39,16 @@ func TestDeref(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Returns the value referenced by the pointer", func(t *testing.T) {
+		t.Parallel()
+
 		s := "string"
 
 		assert.Equal(t, s, ref.Deref(&s))
 	})
 
 	t.Run("Panics if a nil value is received", func(t *testing.T) {
+		t.Parallel()
+
 		defer func() {
 			if r := recover(); r == nil {
 				t.Errorf("ref.Deref did not panic.")
@@ -58,12 +62,33 @@ func TestDerefZero(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Returns the underlying value of the pointer", func(t *testing.T) {
+		t.Parallel()
+
 		s := "string"
 		assert.Equal(t, ref.DerefZero(&s), "string")
 	})
 
-	t.Run("Returns the default value if the pointer is nil", func(t *testing.T) {
+	t.Run("Returns the zero value if the pointer is nil", func(t *testing.T) {
+		t.Parallel()
+
 		assert.Equal(t, ref.DerefZero[string](nil), "")
+	})
+}
+
+func TestDerefDefault(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Returns the underlying value of the pointer", func(t *testing.T) {
+		t.Parallel()
+
+		s := "string"
+		assert.Equal(t, ref.DerefDefault(&s, "default"), "string")
+	})
+
+	t.Run("Returns the default value if the pointer is nil", func(t *testing.T) {
+		t.Parallel()
+
+		assert.Equal(t, ref.DerefDefault[string](nil, "default"), "default")
 	})
 }
 

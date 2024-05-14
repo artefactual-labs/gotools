@@ -34,6 +34,15 @@ func DerefZero[T any](x *T) T {
 	return *x
 }
 
+// DerefDefault returns the value stored at the pointer x.
+// It returns the provided default when the pointer is nil.
+func DerefDefault[T any](x *T, d T) T {
+	if x == nil {
+		return d
+	}
+	return *x
+}
+
 // UnsignedPtr converts a signed integer into an unsigned integer.
 func UnsignedPtr[S constraints.Signed, U constraints.Unsigned](s *S) *U {
 	var ret *U

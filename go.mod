@@ -20,6 +20,8 @@ require (
 	gotest.tools/v3 v3.5.1
 )
 
+require golang.org/x/sync v0.6.0 // indirect
+
 require (
 	github.com/aws/aws-sdk-go v1.50.36 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.2 // indirect
@@ -49,6 +51,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/otiai10/copy v1.14.0
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/robfig/cron v1.2.0 // indirect

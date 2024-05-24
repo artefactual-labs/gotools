@@ -2,11 +2,12 @@ package fsutil_test
 
 import (
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"testing"
 
 	"gotest.tools/v3/assert"
-	"gotest.tools/v3/fs"
+	tfs "gotest.tools/v3/fs"
 
 	"go.artefactual.dev/tools/fsutil"
 )
@@ -80,26 +81,39 @@ func TestBaseNoExt(t *testing.T) {
 }
 
 func TestSetFileModes(t *testing.T) {
-	td := fs.NewDir(t, "enduro-test-fsutil",
-		fs.WithDir("transfer", fs.WithMode(0o755),
-			fs.WithFile("test1", "I'm a test file.", fs.WithMode(0o644)),
-			fs.WithDir("subdir", fs.WithMode(0o755),
-				fs.WithFile("test2", "Another test file.", fs.WithMode(0o644)),
-			),
-		),
-	)
+	t.Parallel()
 
-	err := fsutil.SetFileModes(td.Join("transfer"), 0o700, 0o600)
-	assert.NilError(t, err)
-	assert.Assert(t, fs.Equal(
-		td.Path(),
-		fs.Expected(t,
-			fs.WithDir("transfer", fs.WithMode(0o700),
-				fs.WithFile("test1", "I'm a test file.", fs.WithMode(0o600)),
-				fs.WithDir("subdir", fs.WithMode(0o700),
-					fs.WithFile("test2", "Another test file.", fs.WithMode(0o600)),
+	t.Run("Sets file modes", func(t *testing.T) {
+		t.Parallel()
+
+		var (
+			initDirMode  fs.FileMode = 0o755
+			initFileMode fs.FileMode = 0o644
+			wantDirMode  fs.FileMode = 0o700
+			wantFileMode fs.FileMode = 0o600
+		)
+
+		td := tfs.NewDir(t, "enduro-test-fsutil",
+			tfs.WithDir("transfer", tfs.WithMode(initDirMode),
+				tfs.WithFile("test1", "I'm a test file.", tfs.WithMode(initFileMode)),
+				tfs.WithDir("subdir", tfs.WithMode(initDirMode),
+					tfs.WithFile("test2", "Another test file.", tfs.WithMode(initFileMode)),
 				),
 			),
-		),
-	))
+		)
+
+		err := fsutil.SetFileModes(td.Join("transfer"), wantDirMode, wantFileMode)
+		assert.NilError(t, err)
+		assert.Assert(t, tfs.Equal(
+			td.Path(),
+			tfs.Expected(t,
+				tfs.WithDir("transfer", tfs.WithMode(wantDirMode),
+					tfs.WithFile("test1", "I'm a test file.", tfs.WithMode(wantFileMode)),
+					tfs.WithDir("subdir", tfs.WithMode(wantDirMode),
+						tfs.WithFile("test2", "Another test file.", tfs.WithMode(wantFileMode)),
+					),
+				),
+			),
+		))
+	})
 }

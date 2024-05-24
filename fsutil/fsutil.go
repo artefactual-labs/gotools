@@ -60,16 +60,16 @@ func Move(src, dst string) error {
 
 // SetFileModes recursively sets the file mode of directory root and its
 // contents.
-func SetFileModes(root string, dirMode, fileMode int) error {
+func SetFileModes(root string, dirMode, fileMode fs.FileMode) error {
 	return filepath.WalkDir(root,
 		func(path string, d os.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
 
-			mode := fs.FileMode(fileMode)
+			mode := fileMode
 			if d.IsDir() {
-				mode = fs.FileMode(dirMode)
+				mode = dirMode
 			}
 
 			if err := os.Chmod(path, mode); err != nil {

@@ -10,57 +10,37 @@ on:
 jobs:
   test:
     strategy:
+      # Don't abort the entire matrix if one element fails.
       fail-fast: false
       matrix:
+        gover: ["1.20.x", "1.21.x", "1.22.x"]
         include:
-          - goarch: amd64
-          - goarch: amd64
+          - gover: "stable"
             testflags: "-race"
     runs-on: ubuntu-22.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Go
         uses: actions/setup-go@v4
         with:
-          go-version: stable
-      - name: Restore cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod/cache
-          key: ${{ github.job }}-${{ runner.os }}-${{ matrix.goarch }}-${{ matrix.testflags }}-go-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
-          restore-keys: |
-            ${{ github.job }}-${{ runner.os }}-${{ matrix.goarch }}-${{ matrix.testflags }}-go-${{ hashFiles('**/go.sum') }}
-            ${{ github.job }}-${{ runner.os }}-${{ matrix.goarch }}-${{ matrix.testflags }}-go-
+          go-version: ${{ matrix.gover }}
       - name: Test all
-        run: go test ${{matrix.testflags}} ./...
+        run: go test ${{ matrix.testflags }} ./...
         env:
           GOARCH: ${{ matrix.goarch }}
   apidiff:
     runs-on: ubuntu-22.04
     if: (github.event.action && 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'breaking-change'))
-
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Install Go
         uses: actions/setup-go@v4
         with:
           go-version: stable
-      - name: Restore cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod/cache
-          key: ${{ github.job }}-${{ runner.os }}-${{ matrix.goarch }}-${{ matrix.testflags }}-go-${{ hashFiles('**/go.sum') }}-${{ github.run_id }}
-          restore-keys: |
-            ${{ github.job }}-${{ runner.os }}-${{ matrix.goarch }}-${{ matrix.testflags }}-go-${{ hashFiles('**/go.sum') }}
-            ${{ github.job }}-${{ runner.os }}-${{ matrix.goarch }}-${{ matrix.testflags }}-go-
       - name: Run api-diff
         uses: joelanford/go-apidiff@main
   lint:
@@ -68,7 +48,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Install Go
@@ -77,7 +57,6 @@ jobs:
           cache: false
           go-version: stable
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
           install-mode: "binary"
-          args: --timeout=10m

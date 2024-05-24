@@ -1,6 +1,5 @@
 module go.artefactual.dev/tools
 
-// We follow the upstream release policy: https://go.dev/doc/devel/release#policy
 go 1.20
 
 require (
@@ -19,8 +18,6 @@ require (
 	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
 	gotest.tools/v3 v3.5.1
 )
-
-require golang.org/x/sync v0.6.0 // indirect
 
 require (
 	github.com/aws/aws-sdk-go v1.50.36 // indirect
@@ -60,6 +57,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect

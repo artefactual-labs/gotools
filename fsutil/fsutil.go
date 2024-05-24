@@ -12,21 +12,11 @@ import (
 	"github.com/otiai10/copy"
 )
 
-// Renamer sets the function for renaming a file, defaulting to os.Rename.
-// Changing Renamer should only be done in tests.
-var Renamer = os.Rename
+// renamer sets the function for renaming a file, defaulting to os.Rename.
+// Changing renamer should only be done in tests.
+var renamer = os.Rename
 
 // BaseNoExt returns the last element of path with any file extensions removed.
-//
-// e.g.
-// "/home/dir/archive.tar.gz" -> "archive"
-// "/home/dir/README.md"      -> "README"
-// "/home/dir/README"         -> "README"
-// "/home/dir/"               -> "dir"
-// "/"                        -> "/"
-// ".."                       -> ".."
-// "."                        -> "."
-// ""                         -> "."
 func BaseNoExt(path string) string {
 	base := filepath.Base(path)
 	if base == "." || base == ".." {
@@ -47,7 +37,7 @@ func Move(src, dst string) error {
 	}
 
 	// Rename when possible.
-	err := Renamer(src, dst)
+	err := renamer(src, dst)
 	if err == nil {
 		return nil
 	}

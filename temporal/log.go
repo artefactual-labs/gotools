@@ -73,9 +73,15 @@ type contextKey struct{}
 var loggerContextKey = contextKey{}
 
 func (a *activityInboundInterceptor) ExecuteActivity(ctx context.Context, in *temporalsdk_interceptor.ExecuteActivityInput) (interface{}, error) {
-	ctx = context.WithValue(ctx, loggerContextKey, a.logger)
+	info := temporalsdk_activity.GetInfo(ctx)
+	logger := a.logger.WithValues(
+		"ActivityID", info.ActivityID,
+		"ActivityType", info.ActivityType.Name,
+	)
 
-	a.logger.V(1).Info("Executing activity.")
+	ctx = context.WithValue(ctx, loggerContextKey, logger)
+
+	logger.V(1).Info("Executing activity.")
 
 	return a.Next.ExecuteActivity(ctx, in)
 }
@@ -86,12 +92,5 @@ func GetLogger(ctx context.Context) logr.Logger {
 		return logr.Discard()
 	}
 
-	logger := v.(logr.Logger)
-
-	info := temporalsdk_activity.GetInfo(ctx)
-
-	return logger.WithValues(
-		"ActivityID", info.ActivityID,
-		"ActivityType", info.ActivityType.Name,
-	)
+	return v.(logr.Logger)
 }

@@ -74,6 +74,9 @@ var loggerContextKey = contextKey{}
 
 func (a *activityInboundInterceptor) ExecuteActivity(ctx context.Context, in *temporalsdk_interceptor.ExecuteActivityInput) (interface{}, error) {
 	ctx = context.WithValue(ctx, loggerContextKey, a.logger)
+
+	a.logger.V(1).Info("Executing activity.")
+
 	return a.Next.ExecuteActivity(ctx, in)
 }
 

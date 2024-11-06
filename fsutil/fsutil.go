@@ -28,6 +28,20 @@ func BaseNoExt(path string) string {
 	return base
 }
 
+// Exists returns true if a file or directory exist at path and false if one
+// doesn't. If a filesystem error occurs doing the check then Exists returns
+// false and the error.
+func Exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
 // Move moves a file or directory. It first tries to rename src to dst. If the
 // rename fails due to the source and destination being on different file
 // systems Move copies src to dst, then deletes src.

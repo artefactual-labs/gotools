@@ -80,6 +80,40 @@ func TestBaseNoExt(t *testing.T) {
 	}
 }
 
+func TestExists(t *testing.T) {
+	t.Parallel()
+
+	td := tfs.NewDir(t, "preprocessing-sfa-test",
+		tfs.WithDir("a", tfs.WithFile("needle", "")),
+	)
+
+	type test struct {
+		name string
+		path string
+		want bool
+	}
+	for _, tt := range []test{
+		{
+			name: "file exists",
+			path: td.Join("a", "needle"),
+			want: true,
+		},
+		{
+			name: "file doesn't exist",
+			path: td.Join("b"),
+			want: false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := fsutil.Exists(tt.path)
+			assert.NilError(t, err)
+			assert.Equal(t, got, tt.want)
+		})
+	}
+}
+
 func TestSetFileModes(t *testing.T) {
 	t.Parallel()
 

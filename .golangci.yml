@@ -1,5 +1,5 @@
 run:
-  deadline: 60s
+  timeout: 1m
 
 linters:
   enable:
@@ -16,14 +16,11 @@ issues:
 
 linters-settings:
   gci:
-    no-inline-comments: true
-    no-prefix-comments: false
     sections:
       - standard
       - default
       - prefix(go.artefactual.dev/tools)
-    section-separators:
-      - newLine
+    custom-order: true
   importas:
     no-unaliased: true
     no-extra-aliases: false

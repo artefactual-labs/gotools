@@ -10,6 +10,7 @@ require (
 	github.com/go-logr/logr v1.4.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/go-cmp v0.6.0
+	github.com/gorilla/mux v1.8.1
 	go.temporal.io/api v1.29.2
 	go.temporal.io/sdk v1.26.0
 	go.uber.org/mock v0.4.0

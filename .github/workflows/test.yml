@@ -14,9 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         gover: ["1.24.x"]
-        include:
-          - gover: "stable"
-            testflags: "-race"
     runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
@@ -26,7 +23,7 @@ jobs:
         with:
           go-version: ${{ matrix.gover }}
       - name: Test all
-        run: go test ${{ matrix.testflags }} -cover -coverpkg=./... -coverprofile=coverage.txt ./...
+        run: go test -race -cover -coverpkg=./... -coverprofile=coverage.txt ./...
         env:
           GOARCH: ${{ matrix.goarch }}
       - name: Upload coverage to Codecov

@@ -13,7 +13,7 @@ jobs:
       # Don't abort the entire matrix if one element fails.
       fail-fast: false
       matrix:
-        gover: ["1.22.x", "1.23.x"]
+        gover: ["1.24.x"]
         include:
           - gover: "stable"
             testflags: "-race"

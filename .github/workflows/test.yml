@@ -17,7 +17,7 @@ jobs:
         include:
           - gover: "stable"
             testflags: "-race"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
         env:
           GOARCH: ${{ matrix.goarch }}
   apidiff:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: (github.event.action && 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'breaking-change'))
     steps:
       - name: Check out repository
@@ -45,7 +45,7 @@ jobs:
         uses: joelanford/go-apidiff@main
   lint:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -61,7 +61,7 @@ jobs:
           install-mode: "binary"
   mod:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

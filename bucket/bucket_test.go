@@ -78,7 +78,7 @@ func TestNewWithConfig(t *testing.T) {
 			config: &bucket.Config{
 				URL: "unknown://",
 			},
-			errMsg: `open bucket from URL "unknown://": open blob.Bucket: no driver registered for "unknown" for URL "unknown:"; available schemes: file, mem, s3`,
+			errMsg: `open bucket from URL "unknown://": open blob.Bucket: no driver registered for "unknown" for URL "unknown:"; available schemes: azblob, file, mem, s3`,
 		},
 		"Rejects bucket with empty name": {
 			config: &bucket.Config{

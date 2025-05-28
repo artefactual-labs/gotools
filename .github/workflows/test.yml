@@ -57,9 +57,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          install-mode: "binary"
+        uses: golangci/golangci-lint-action@v8
   mod:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04

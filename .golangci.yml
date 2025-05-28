@@ -1,33 +1,40 @@
-run:
-  timeout: 1m
-
+version: "2"
 linters:
   enable:
-    - misspell
-    - gofumpt
     - importas
+    - misspell
+  settings:
+    importas:
+      alias:
+        - pkg: go.temporal.io/sdk/(\w+)
+          alias: temporalsdk_$1
+        - pkg: go.temporal.io/api/(\w+)
+          alias: temporalapi_$1
+      no-unaliased: true
+      no-extra-aliases: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+        path: _test\.go
+      - linters:
+          - staticcheck
+        path: bucket
+        text: 'SA1019:'
+formatters:
+  enable:
     - gci
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters: [errcheck]
-    - path: bucket
-      linters: [staticcheck]
-      text: "SA1019:"
-
-linters-settings:
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(go.artefactual.dev/tools)
-    custom-order: true
-  importas:
-    no-unaliased: true
-    no-extra-aliases: false
-    alias:
-      - pkg: go.temporal.io/sdk/(\w+)
-        alias: temporalsdk_$1
-      - pkg: go.temporal.io/api/(\w+)
-        alias: temporalapi_$1
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - localmodule
+      custom-order: true

@@ -1,0 +1,12 @@
+// See https://github.com/artefactual-labs/bine for config details.
+{
+    "project": "gotools",
+    "bins": [
+        {
+            "name": "golangci-lint",
+            "url": "https://github.com/golangci/golangci-lint",
+            "version": "2.1.6",
+            "asset_pattern": "{name}-{version}-{goos}-{goarch}.tar.gz"
+        }
+    ]
+}

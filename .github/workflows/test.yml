@@ -26,9 +26,13 @@ jobs:
         with:
           go-version: ${{ matrix.gover }}
       - name: Test all
-        run: go test ${{ matrix.testflags }} ./...
+        run: go test ${{ matrix.testflags }} -cover -coverpkg=./... -coverprofile=coverage.txt ./...
         env:
           GOARCH: ${{ matrix.goarch }}
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
   apidiff:
     runs-on: ubuntu-24.04
     if: (github.event.action && 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'breaking-change'))

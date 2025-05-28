@@ -40,7 +40,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: stable
+          go-version-file: go.mod
       - name: Run api-diff
         uses: joelanford/go-apidiff@main
   lint:
@@ -54,8 +54,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          cache: false
-          go-version: stable
+          go-version-file: go.mod
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
@@ -70,5 +69,7 @@ jobs:
           fetch-depth: 0
       - name: Install Go
         uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
       - name: Check go.mod
         run: go mod tidy -diff

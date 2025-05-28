@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"gocloud.dev/blob"
+	_ "gocloud.dev/blob/azureblob"
 	"gocloud.dev/blob/s3blob"
 )
 

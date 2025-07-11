@@ -25,6 +25,7 @@ func TestMiddlewares(t *testing.T) {
 	router.Use(
 		middleware.Recover(logger),
 		middleware.WriteTimeout(0),
+		middleware.ReadTimeout(0),
 		middleware.VersionHeader("", "v1.2.3"),
 	)
 

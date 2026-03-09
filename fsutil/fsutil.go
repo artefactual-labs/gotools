@@ -42,6 +42,13 @@ func Exists(path string) (bool, error) {
 	return false, err
 }
 
+// FileExists returns true if a file or directory exists at path. If checking
+// the path returns an error, FileExists returns false.
+func FileExists(path string) bool {
+	exists, err := Exists(path)
+	return err == nil && exists
+}
+
 // Move moves a file or directory. It first tries to rename src to dst. If the
 // rename fails due to the source and destination being on different file
 // systems Move copies src to dst, then deletes src.

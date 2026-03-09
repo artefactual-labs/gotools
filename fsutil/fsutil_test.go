@@ -114,6 +114,18 @@ func TestExists(t *testing.T) {
 	}
 }
 
+func TestFileExists(t *testing.T) {
+	t.Parallel()
+
+	td := tfs.NewDir(t, "enduro-test",
+		tfs.WithFile("small.txt", "I'm a small file."),
+	)
+
+	assert.Equal(t, fsutil.FileExists(td.Path()), true)
+	assert.Equal(t, fsutil.FileExists(td.Join("small.txt")), true)
+	assert.Equal(t, fsutil.FileExists(td.Join("nope")), false)
+}
+
 func TestSetFileModes(t *testing.T) {
 	t.Parallel()
 

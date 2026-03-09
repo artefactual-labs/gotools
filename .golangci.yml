@@ -3,6 +3,7 @@ linters:
   enable:
     - importas
     - misspell
+    - modernize
   settings:
     importas:
       alias:

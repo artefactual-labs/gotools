@@ -10,24 +10,24 @@ import (
 )
 
 type eqMatcher struct {
-	want interface{}
+	want any
 	opts []cmp.Option
 }
 
 // Eq is similar to gomock.Eq but uses go-cmp, accepts options and returns a
 // human-readable report of the differences between the compared values.
-func Eq(want interface{}, opts ...cmp.Option) eqMatcher {
+func Eq(want any, opts ...cmp.Option) eqMatcher {
 	return eqMatcher{
 		want: want,
 		opts: opts,
 	}
 }
 
-func (eq eqMatcher) Matches(got interface{}) bool {
+func (eq eqMatcher) Matches(got any) bool {
 	return cmp.Equal(got, eq.want, eq.opts...)
 }
 
-func (eq eqMatcher) Got(got interface{}) string {
+func (eq eqMatcher) Got(got any) string {
 	diff := strings.TrimSpace(cmp.Diff(got, eq.want, eq.opts...))
 	return fmt.Sprintf("%v (%T)\nDiff (-got +want):\n%s", got, got, diff)
 }

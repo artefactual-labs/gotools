@@ -7,7 +7,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-var ctxType = reflect.TypeOf((*context.Context)(nil)).Elem()
+var ctxType = reflect.TypeFor[context.Context]()
 
 func Context() gomock.Matcher {
 	return gomock.AssignableToTypeOf(ctxType)

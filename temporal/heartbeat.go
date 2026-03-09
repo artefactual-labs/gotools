@@ -40,10 +40,7 @@ func StartAutoHeartbeat(ctx context.Context) *AutoHeartbeat {
 	}
 
 	// No risk in having a very small interval since Temporal throttles it anyways.
-	heartbeatInterval := heartbeatTimeout / 3
-	if heartbeatInterval > maxInterval {
-		heartbeatInterval = maxInterval
-	}
+	heartbeatInterval := min(heartbeatTimeout/3, maxInterval)
 
 	ticker := time.NewTicker(heartbeatInterval)
 	done := make(chan struct{})

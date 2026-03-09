@@ -27,7 +27,7 @@ func TestNew(t *testing.T) {
 		logger := log.New(&b)
 		logger.Info("Hello world!", "foo", "bar")
 
-		assertInfoRecord(t, b, map[string]interface{}{
+		assertInfoRecord(t, b, map[string]any{
 			"level":  "0",
 			"caller": "log/log_test.go:28",
 			"msg":    "Hello world!",
@@ -44,7 +44,7 @@ func TestNew(t *testing.T) {
 		)
 		logger.V(4).Info("Hello world!", "foo", "bar")
 
-		assertInfoRecord(t, b, map[string]interface{}{
+		assertInfoRecord(t, b, map[string]any{
 			"logger": "name",
 			"level":  "4",
 			"caller": "log/log_test.go:45",
@@ -59,7 +59,7 @@ func TestNew(t *testing.T) {
 		logger := log.New(&b)
 		logger.Error(io.EOF, "End of file.", "foo", "bar")
 
-		assertErrorRecordWithStacktrace(t, b, map[string]interface{}{
+		assertErrorRecordWithStacktrace(t, b, map[string]any{
 			"level":  "2",
 			"caller": "log/log_test.go:60",
 			"error":  "EOF",
@@ -74,7 +74,7 @@ func TestNew(t *testing.T) {
 		logger := log.New(&b, log.WithStacktrace(false))
 		logger.Error(io.EOF, "End of file.", "foo", "bar")
 
-		assertErrorRecordWithoutStacktrace(t, b, map[string]interface{}{
+		assertErrorRecordWithoutStacktrace(t, b, map[string]any{
 			"level":  "2",
 			"caller": "log/log_test.go:75",
 			"error":  "EOF",
@@ -84,19 +84,19 @@ func TestNew(t *testing.T) {
 	})
 }
 
-func assertInfoRecord(t *testing.T, b bytes.Buffer, keysAndValues map[string]interface{}) {
+func assertInfoRecord(t *testing.T, b bytes.Buffer, keysAndValues map[string]any) {
 	t.Helper()
 
-	entry := map[string]interface{}{}
+	entry := map[string]any{}
 	err := json.Unmarshal(b.Bytes(), &entry)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, entry, keysAndValues, ignoreTimestampField)
 }
 
-func assertErrorRecordWithoutStacktrace(t *testing.T, b bytes.Buffer, keysAndValues map[string]interface{}) {
+func assertErrorRecordWithoutStacktrace(t *testing.T, b bytes.Buffer, keysAndValues map[string]any) {
 	t.Helper()
 
-	entry := map[string]interface{}{}
+	entry := map[string]any{}
 	err := json.Unmarshal(b.Bytes(), &entry)
 	assert.NilError(t, err)
 
@@ -107,10 +107,10 @@ func assertErrorRecordWithoutStacktrace(t *testing.T, b bytes.Buffer, keysAndVal
 	assert.DeepEqual(t, entry, keysAndValues, ignoreTimestampField)
 }
 
-func assertErrorRecordWithStacktrace(t *testing.T, b bytes.Buffer, keysAndValues map[string]interface{}) {
+func assertErrorRecordWithStacktrace(t *testing.T, b bytes.Buffer, keysAndValues map[string]any) {
 	t.Helper()
 
-	entry := map[string]interface{}{}
+	entry := map[string]any{}
 	err := json.Unmarshal(b.Bytes(), &entry)
 	assert.NilError(t, err)
 

@@ -27,7 +27,7 @@ func Func[P any](description string, check func(P) error) *funcMatcher[P] {
 	}
 }
 
-func (m *funcMatcher[P]) Matches(got interface{}) bool {
+func (m *funcMatcher[P]) Matches(got any) bool {
 	err := m.check(got.(P))
 	if err != nil {
 		m.message = err.Error()
@@ -40,6 +40,6 @@ func (m funcMatcher[P]) String() string {
 	return m.desc
 }
 
-func (m funcMatcher[P]) Got(got interface{}) string {
+func (m funcMatcher[P]) Got(got any) string {
 	return m.message
 }

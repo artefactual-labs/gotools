@@ -22,8 +22,8 @@ func BaseNoExt(path string) string {
 	if base == "." || base == ".." {
 		return base
 	}
-	if idx := strings.IndexByte(base, '.'); idx != -1 {
-		return base[:idx]
+	if before, _, ok := strings.Cut(base, "."); ok {
+		return before
 	}
 	return base
 }

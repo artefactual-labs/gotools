@@ -13,7 +13,9 @@ jobs:
       # Don't abort the entire matrix if one element fails.
       fail-fast: false
       matrix:
-        gover: ["1.24.x"]
+        gover:
+          - "1.25.x"
+          - "1.26.x"
     runs-on: ubuntu-24.04
     steps:
       - name: Check out repository

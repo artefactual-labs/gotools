@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	s3v2 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"gocloud.dev/blob"
@@ -97,6 +98,121 @@ func TestNewWithConfig(t *testing.T) {
 				SecretKey: "secret",
 			},
 			errMsg: "open bucket: s3blob.OpenBucket: bucketName is required",
+		},
+		"Opens Azure URL with shared key auth": {
+			config: &bucket.Config{
+				URL: "azblob://name",
+				Azure: &bucket.AzureConfig{
+					StorageAccount: "account",
+					StorageKey:     "dGVzdA==",
+				},
+			},
+			require: func(b *blob.Bucket) {
+				var client *container.Client
+				assert.Equal(t, b.As(&client), true)
+				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
+			},
+		},
+		"Opens Azure URL with client secret auth": {
+			config: &bucket.Config{
+				URL: "azblob://name",
+				Azure: &bucket.AzureConfig{
+					StorageAccount: "account",
+					TenantID:       "tenant",
+					ClientID:       "client",
+					ClientSecret:   "secret",
+				},
+			},
+			require: func(b *blob.Bucket) {
+				var client *container.Client
+				assert.Equal(t, b.As(&client), true)
+				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
+			},
+		},
+		"Opens Azure URL with client secret auth without storage account": {
+			config: &bucket.Config{
+				URL: "azblob://name?storage_account=account",
+				Azure: &bucket.AzureConfig{
+					TenantID:     "tenant",
+					ClientID:     "client",
+					ClientSecret: "secret",
+				},
+			},
+			require: func(b *blob.Bucket) {
+				var client *container.Client
+				assert.Equal(t, b.As(&client), true)
+				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
+			},
+		},
+		"Opens Azure URL with default auth": {
+			config: &bucket.Config{
+				URL: "azblob://name",
+				Azure: &bucket.AzureConfig{
+					StorageAccount: "account",
+				},
+			},
+			require: func(b *blob.Bucket) {
+				var client *container.Client
+				assert.Equal(t, b.As(&client), true)
+				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
+			},
+		},
+		"Opens Azure URL with default opener when Azure config is empty": {
+			config: &bucket.Config{
+				URL: "azblob://name?storage_account=account",
+			},
+			require: func(b *blob.Bucket) {
+				var client *container.Client
+				assert.Equal(t, b.As(&client), true)
+				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
+			},
+		},
+		"Opens Azure URL with empty Azure config": {
+			config: &bucket.Config{
+				URL:   "azblob://name?storage_account=account",
+				Azure: &bucket.AzureConfig{},
+			},
+			require: func(b *blob.Bucket) {
+				var client *container.Client
+				assert.Equal(t, b.As(&client), true)
+				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
+			},
+		},
+		"Prefers Azure client secret when multiple auth methods are provided": {
+			config: &bucket.Config{
+				URL: "azblob://name",
+				Azure: &bucket.AzureConfig{
+					StorageAccount: "account",
+					StorageKey:     "key", // Would fail if used as it is not base64 encoded
+					TenantID:       "tenant",
+					ClientID:       "client",
+					ClientSecret:   "secret",
+				},
+			},
+			require: func(b *blob.Bucket) {
+				var client *container.Client
+				assert.Equal(t, b.As(&client), true)
+				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
+			},
+		},
+		"Rejects partial Azure shared key auth": {
+			config: &bucket.Config{
+				URL: "azblob://name",
+				Azure: &bucket.AzureConfig{
+					StorageKey: "dGVzdA==",
+				},
+			},
+			errMsg: `open Azure bucket from URL "azblob://name" with overrides: shared key auth requires storage account and storage key`,
+		},
+		"Rejects partial Azure client secret auth": {
+			config: &bucket.Config{
+				URL: "azblob://name",
+				Azure: &bucket.AzureConfig{
+					StorageAccount: "account",
+					ClientID:       "client",
+				},
+			},
+			errMsg: `open Azure bucket from URL "azblob://name" with overrides: client secret auth requires tenant ID, client ID, and client secret`,
 		},
 	}
 

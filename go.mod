@@ -5,6 +5,8 @@ go 1.25
 toolchain go1.26.2
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.3
 	github.com/aws/aws-sdk-go-v2 v1.40.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.2
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.2
@@ -14,6 +16,7 @@ require (
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/go-cmp v0.7.0
 	github.com/gorilla/mux v1.8.1
+	github.com/otiai10/copy v1.14.0
 	go.temporal.io/api v1.29.2
 	go.temporal.io/sdk v1.26.0
 	go.uber.org/mock v0.4.0
@@ -29,9 +32,7 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.20.0 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.2 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.3 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest/to v0.4.1 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.6.0 // indirect
@@ -85,7 +86,6 @@ require (
 	github.com/mholt/archives v0.1.1 // indirect
 	github.com/minio/minlz v1.0.0 // indirect
 	github.com/nwaples/rardecode/v2 v2.1.0 // indirect
-	github.com/otiai10/copy v1.14.0
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/peterbourgon/ff/v4 v4.0.0-alpha.4 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect

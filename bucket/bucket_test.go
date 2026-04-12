@@ -2,8 +2,10 @@ package bucket_test
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	s3v2 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/fileblob"
@@ -43,6 +45,8 @@ func TestNewWithConfig(t *testing.T) {
 				opts := client.Options()
 				assert.Equal(t, opts.Region, "region")
 				assert.Equal(t, opts.UsePathStyle, true)
+				assert.Equal(t, aws.ToString(opts.BaseEndpoint), "http://foobar:12345")
+				assert.Assert(t, opts.EndpointResolver == nil)
 
 				_, err := client.ListBuckets(context.Background(), &s3v2.ListBucketsInput{})
 				assert.ErrorContains(t, err, "http://foobar:12345/?x-id=ListBuckets")
@@ -59,6 +63,10 @@ func TestNewWithConfig(t *testing.T) {
 			require: func(b *blob.Bucket) {
 				var client *s3v2.Client
 				assert.Equal(t, b.As(&client), true)
+
+				opts := client.Options()
+				assert.Equal(t, aws.ToString(opts.BaseEndpoint), "http://foobar:12345")
+				assert.Assert(t, opts.EndpointResolver == nil)
 
 				_, err := client.ListBuckets(context.Background(), &s3v2.ListBucketsInput{})
 				assert.ErrorContains(t, err, "http://foobar:12345/?x-id=ListBuckets")
@@ -113,4 +121,28 @@ func TestNewWithConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewWithConfigWithoutEndpointUsesDefaultS3Resolution(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("AWS_ENDPOINT_URL", "")
+	t.Setenv("AWS_ENDPOINT_URL_S3", "")
+	t.Setenv("AWS_CONFIG_FILE", filepath.Join(tempDir, "config"))
+	t.Setenv("AWS_SHARED_CREDENTIALS_FILE", filepath.Join(tempDir, "credentials"))
+
+	b, err := bucket.NewWithConfig(context.Background(), &bucket.Config{
+		Bucket:    "name",
+		Region:    "region",
+		AccessKey: "access",
+		SecretKey: "secret",
+	})
+	assert.NilError(t, err)
+	defer b.Close()
+
+	var client *s3v2.Client
+	assert.Equal(t, b.As(&client), true)
+
+	opts := client.Options()
+	assert.Assert(t, opts.BaseEndpoint == nil)
+	assert.Assert(t, opts.EndpointResolver == nil)
 }

@@ -67,13 +67,6 @@ func openWithURL(ctx context.Context, url string) (*blob.Bucket, error) {
 }
 
 func openWithConfig(ctx context.Context, c *Config) (*blob.Bucket, error) {
-	addr := c.Endpoint
-	if u, err := url.Parse(c.Endpoint); err == nil {
-		if !strings.HasPrefix(u.Scheme, "http") {
-			addr = "http://" + addr
-		}
-	}
-
 	awscfg, err := config.LoadDefaultConfig(
 		ctx,
 		config.WithSharedConfigProfile(c.Profile),
@@ -83,13 +76,6 @@ func openWithConfig(ctx context.Context, c *Config) (*blob.Bucket, error) {
 				c.AccessKey, c.SecretKey, c.Token,
 			),
 		),
-		config.WithEndpointResolverWithOptions(
-			aws.EndpointResolverWithOptionsFunc(
-				func(service, region string, options ...any) (aws.Endpoint, error) {
-					return aws.Endpoint{URL: addr}, nil
-				},
-			),
-		),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("load AWS default config: %v", err)
@@ -97,6 +83,11 @@ func openWithConfig(ctx context.Context, c *Config) (*blob.Bucket, error) {
 
 	client := s3.NewFromConfig(awscfg, func(opts *s3.Options) {
 		opts.UsePathStyle = c.PathStyle
+		if c.Endpoint != "" {
+			// BaseEndpoint customizes only this S3 client. Leaving it unset lets
+			// the AWS SDK use its normal endpoint resolution for AWS S3.
+			opts.BaseEndpoint = aws.String(normalizeEndpoint(c.Endpoint))
+		}
 	})
 	b, err := s3blob.OpenBucketV2(ctx, client, c.Bucket, nil)
 	if err != nil {
@@ -104,4 +95,13 @@ func openWithConfig(ctx context.Context, c *Config) (*blob.Bucket, error) {
 	}
 
 	return b, nil
+}
+
+func normalizeEndpoint(endpoint string) string {
+	if u, err := url.Parse(endpoint); err == nil {
+		if !strings.HasPrefix(u.Scheme, "http") {
+			return "http://" + endpoint
+		}
+	}
+	return endpoint
 }

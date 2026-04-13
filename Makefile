@@ -4,6 +4,11 @@ SHELL := /bin/bash
 
 export PATH := $(shell go tool bine path):$(PATH)
 
+# List available module dependency updates.
+deps: DEPS_FLAGS ?= -direct -update
+deps: tool-go-mod-outdated
+	go list -u -m -json all | go-mod-outdated $(DEPS_FLAGS)
+
 # Run only the configured formatters (gofumpt, gci, etc.).
 fmt: FMT_FLAGS ?=
 fmt: tool-golangci-lint

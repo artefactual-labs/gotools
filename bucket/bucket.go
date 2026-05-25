@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"gocloud.dev/blob"
 	"gocloud.dev/blob/azureblob"
+	_ "gocloud.dev/blob/fileblob"
 	"gocloud.dev/blob/s3blob"
 )
 

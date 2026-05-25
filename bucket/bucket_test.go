@@ -1,7 +1,6 @@
 package bucket_test
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	s3v2 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"gocloud.dev/blob"
-	_ "gocloud.dev/blob/fileblob"
 	_ "gocloud.dev/blob/memblob"
 	"gotest.tools/v3/assert"
 
@@ -22,12 +20,24 @@ func TestNewWithConfig(t *testing.T) {
 	type test struct {
 		config  *bucket.Config
 		errMsg  string
-		require func(*blob.Bucket)
+		require func(*testing.T, *blob.Bucket)
 	}
 	tests := map[string]test{
 		"Opens URL-based config": {
 			config: &bucket.Config{
 				URL: "mem://",
+			},
+		},
+		"Opens file URL-based config": {
+			config: &bucket.Config{
+				URL: "file://" + t.TempDir(),
+			},
+			require: func(t *testing.T, b *blob.Bucket) {
+				assert.NilError(t, b.WriteAll(t.Context(), "example.txt", []byte("contents"), nil))
+
+				got, err := b.ReadAll(t.Context(), "example.txt")
+				assert.NilError(t, err)
+				assert.DeepEqual(t, got, []byte("contents"))
 			},
 		},
 		"Opens attr-based config": {
@@ -39,7 +49,7 @@ func TestNewWithConfig(t *testing.T) {
 				SecretKey: "secret",
 				PathStyle: true,
 			},
-			require: func(b *blob.Bucket) {
+			require: func(t *testing.T, b *blob.Bucket) {
 				var client *s3v2.Client
 				assert.Equal(t, b.As(&client), true)
 
@@ -49,7 +59,7 @@ func TestNewWithConfig(t *testing.T) {
 				assert.Equal(t, aws.ToString(opts.BaseEndpoint), "http://foobar:12345")
 				assert.Assert(t, opts.EndpointResolver == nil)
 
-				_, err := client.ListBuckets(context.Background(), &s3v2.ListBucketsInput{})
+				_, err := client.ListBuckets(t.Context(), &s3v2.ListBucketsInput{})
 				assert.ErrorContains(t, err, "http://foobar:12345/?x-id=ListBuckets")
 			},
 		},
@@ -61,7 +71,7 @@ func TestNewWithConfig(t *testing.T) {
 				AccessKey: "access",
 				SecretKey: "secret",
 			},
-			require: func(b *blob.Bucket) {
+			require: func(t *testing.T, b *blob.Bucket) {
 				var client *s3v2.Client
 				assert.Equal(t, b.As(&client), true)
 
@@ -69,7 +79,7 @@ func TestNewWithConfig(t *testing.T) {
 				assert.Equal(t, aws.ToString(opts.BaseEndpoint), "http://foobar:12345")
 				assert.Assert(t, opts.EndpointResolver == nil)
 
-				_, err := client.ListBuckets(context.Background(), &s3v2.ListBucketsInput{})
+				_, err := client.ListBuckets(t.Context(), &s3v2.ListBucketsInput{})
 				assert.ErrorContains(t, err, "http://foobar:12345/?x-id=ListBuckets")
 			},
 		},
@@ -107,7 +117,7 @@ func TestNewWithConfig(t *testing.T) {
 					StorageKey:     "dGVzdA==",
 				},
 			},
-			require: func(b *blob.Bucket) {
+			require: func(t *testing.T, b *blob.Bucket) {
 				var client *container.Client
 				assert.Equal(t, b.As(&client), true)
 				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
@@ -123,7 +133,7 @@ func TestNewWithConfig(t *testing.T) {
 					ClientSecret:   "secret",
 				},
 			},
-			require: func(b *blob.Bucket) {
+			require: func(t *testing.T, b *blob.Bucket) {
 				var client *container.Client
 				assert.Equal(t, b.As(&client), true)
 				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
@@ -138,7 +148,7 @@ func TestNewWithConfig(t *testing.T) {
 					ClientSecret: "secret",
 				},
 			},
-			require: func(b *blob.Bucket) {
+			require: func(t *testing.T, b *blob.Bucket) {
 				var client *container.Client
 				assert.Equal(t, b.As(&client), true)
 				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
@@ -151,7 +161,7 @@ func TestNewWithConfig(t *testing.T) {
 					StorageAccount: "account",
 				},
 			},
-			require: func(b *blob.Bucket) {
+			require: func(t *testing.T, b *blob.Bucket) {
 				var client *container.Client
 				assert.Equal(t, b.As(&client), true)
 				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
@@ -161,7 +171,7 @@ func TestNewWithConfig(t *testing.T) {
 			config: &bucket.Config{
 				URL: "azblob://name?storage_account=account",
 			},
-			require: func(b *blob.Bucket) {
+			require: func(t *testing.T, b *blob.Bucket) {
 				var client *container.Client
 				assert.Equal(t, b.As(&client), true)
 				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
@@ -172,7 +182,7 @@ func TestNewWithConfig(t *testing.T) {
 				URL:   "azblob://name?storage_account=account",
 				Azure: &bucket.AzureConfig{},
 			},
-			require: func(b *blob.Bucket) {
+			require: func(t *testing.T, b *blob.Bucket) {
 				var client *container.Client
 				assert.Equal(t, b.As(&client), true)
 				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
@@ -189,7 +199,7 @@ func TestNewWithConfig(t *testing.T) {
 					ClientSecret:   "secret",
 				},
 			},
-			require: func(b *blob.Bucket) {
+			require: func(t *testing.T, b *blob.Bucket) {
 				var client *container.Client
 				assert.Equal(t, b.As(&client), true)
 				assert.Equal(t, client.URL(), "https://account.blob.core.windows.net/name")
@@ -220,7 +230,7 @@ func TestNewWithConfig(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			b, err := bucket.NewWithConfig(context.Background(), tc.config)
+			b, err := bucket.NewWithConfig(t.Context(), tc.config)
 			if b != nil {
 				defer b.Close()
 			}
@@ -233,7 +243,7 @@ func TestNewWithConfig(t *testing.T) {
 			assert.NilError(t, err)
 
 			if tc.require != nil {
-				tc.require(b)
+				tc.require(t, b)
 			}
 		})
 	}
@@ -246,7 +256,7 @@ func TestNewWithConfigWithoutEndpointUsesDefaultS3Resolution(t *testing.T) {
 	t.Setenv("AWS_CONFIG_FILE", filepath.Join(tempDir, "config"))
 	t.Setenv("AWS_SHARED_CREDENTIALS_FILE", filepath.Join(tempDir, "credentials"))
 
-	b, err := bucket.NewWithConfig(context.Background(), &bucket.Config{
+	b, err := bucket.NewWithConfig(t.Context(), &bucket.Config{
 		Bucket:    "name",
 		Region:    "region",
 		AccessKey: "access",

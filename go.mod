@@ -24,6 +24,7 @@ require (
 	gocloud.dev v0.45.0
 	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
 	golang.org/x/oauth2 v0.35.0
+	golang.org/x/term v0.39.0
 	gotest.tools/v3 v3.5.2
 )
 

@@ -3,14 +3,17 @@
 //
 // Use [New] to build the logger and [Sync] to flush buffered logs, e.g.;
 //
-//	logger := logr.New(os.Stderr)
+//	logger := log.New(os.Stderr)
 //	defer log.Sync(logger)
 //	logger.Info("Hello!", "count", 10)
 //
 // [New] accepts multiple functional options, e.g. use [WithLevel] to specify
-// the verbosity of the logger:
+// the verbosity and [WithFormat] to select the record format:
 //
-//	logger := logr.New(os.Stderr, log.WithLevel(10))
+//	logger := log.New(os.Stderr,
+//		log.WithLevel(10),
+//		log.WithFormat(log.FormatAuto),
+//	)
 //
 // Visit the [logr] and [zap] projects for more details.
 //
@@ -28,27 +31,31 @@ import (
 )
 
 // New returns a new logger based on the logr interface and the zap logging
-// library.
+// library. Log records use [FormatJSON] by default.
 func New(w io.Writer, opts ...option) logr.Logger {
 	options := defaults()
 	for _, o := range opts {
 		o.apply(&options)
 	}
+	format := options.format
+	if format == FormatAuto {
+		format = resolveFormat(format, writerIsTerminal(w))
+	}
 
 	var encoder zapcore.Encoder
 	{
 		var config zapcore.EncoderConfig
-		if options.debug {
+		if format == FormatText {
 			config = zap.NewDevelopmentEncoderConfig()
 		} else {
 			config = zap.NewProductionEncoderConfig()
 		}
-		config.EncodeName = nameEncoder(options.debug)
-		config.EncodeTime = timeEncoder(options.debug)
-		config.EncodeLevel = levelEncoder(options.debug)
+		config.EncodeName = nameEncoder(format)
+		config.EncodeTime = timeEncoder(format)
+		config.EncodeLevel = levelEncoder(format)
 		config.CallerKey = "caller"
 
-		if options.debug {
+		if format == FormatText {
 			encoder = zapcore.NewConsoleEncoder(config)
 		} else {
 			encoder = zapcore.NewJSONEncoder(config)

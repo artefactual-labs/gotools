@@ -29,10 +29,10 @@ func (c color) Add(s string) string {
 	return fmt.Sprintf("\x1b[%dm%s\x1b[0m", uint8(c), s)
 }
 
-func nameEncoder(debug bool) func(loggerName string, enc zapcore.PrimitiveArrayEncoder) {
+func nameEncoder(format Format) func(loggerName string, enc zapcore.PrimitiveArrayEncoder) {
 	return func(loggerName string, enc zapcore.PrimitiveArrayEncoder) {
 		var c color
-		if debug {
+		if format == FormatText {
 			c = green
 		}
 
@@ -40,29 +40,25 @@ func nameEncoder(debug bool) func(loggerName string, enc zapcore.PrimitiveArrayE
 	}
 }
 
-func timeEncoder(debug bool) func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+func timeEncoder(format Format) func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	return func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		if !debug {
+		if format == FormatJSON {
 			zapcore.EpochTimeEncoder(t, enc)
 			return
 		}
 
 		const layout = "2006-01-02T15:04:05.000Z0700" // ISO8601TimeEncoder.
 		formatted := t.Format(layout)
-		var c color
-		if debug {
-			c = yellow
-		}
-		enc.AppendString(c.Add(formatted))
+		enc.AppendString(yellow.Add(formatted))
 	}
 }
 
-func levelEncoder(debug bool) func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
+func levelEncoder(format Format) func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
 	return func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
 		vl := math.Abs(float64(l))
 		level := strconv.FormatFloat(vl, 'f', 0, 64)
 
-		if !debug {
+		if format == FormatJSON {
 			enc.AppendString(level)
 			return
 		}

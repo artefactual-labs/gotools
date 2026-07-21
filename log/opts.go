@@ -1,17 +1,34 @@
 package log
 
-import "go.uber.org/zap/zapcore"
+import (
+	"fmt"
+
+	"go.uber.org/zap/zapcore"
+)
+
+// Format determines how log records are encoded.
+type Format uint8
+
+const (
+	// FormatJSON encodes each log record as JSON.
+	FormatJSON Format = iota
+	// FormatText encodes log records as human-readable text.
+	FormatText
+	// FormatAuto uses text for terminal writers and JSON otherwise.
+	FormatAuto
+)
 
 type options struct {
 	name     string
 	level    int
-	debug    bool
+	format   Format
 	clock    zapcore.Clock
 	addStack bool
 }
 
 func defaults() options {
 	return options{
+		format:   FormatJSON,
 		clock:    zapcore.DefaultClock,
 		addStack: true,
 	}
@@ -48,15 +65,31 @@ func WithVerbosity() option {
 	return levelOption(1)
 }
 
-type debugOption bool
+type formatOption Format
 
-func (o debugOption) apply(opts *options) {
-	opts.debug = bool(o)
+func (o formatOption) apply(opts *options) {
+	opts.format = Format(o)
 }
 
-// WithDebug configures the logger for development environments.
+// WithFormat configures the log record format. It panics if format is not one
+// of the formats defined by this package.
+func WithFormat(format Format) option {
+	switch format {
+	case FormatJSON, FormatText, FormatAuto:
+		return formatOption(format)
+	default:
+		panic(fmt.Sprintf("log: invalid format %d", format))
+	}
+}
+
+// WithDebug is an alias for WithFormat with [FormatText] when enabled and
+// [FormatJSON] otherwise. It does not change the logger's verbosity.
 func WithDebug(enabled bool) option {
-	return debugOption(enabled)
+	if enabled {
+		return WithFormat(FormatText)
+	}
+
+	return WithFormat(FormatJSON)
 }
 
 type clockOption struct {

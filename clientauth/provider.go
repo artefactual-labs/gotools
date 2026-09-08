@@ -6,13 +6,11 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"net/url"
 	"sync"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
@@ -23,6 +21,32 @@ const (
 	defaultRetryBackoffCoefficient = 2.0
 )
 
+func validateTokenProviderSettings(
+	tokenExpiryLeeway time.Duration,
+	retryMaxAttempts int,
+	retryInitialInterval time.Duration,
+	retryMaxInterval time.Duration,
+	retryBackoffCoefficient float64,
+) []error {
+	var errs []error
+	if retryMaxAttempts < 1 {
+		errs = append(errs, errors.New("invalid OIDC retry max attempts, value must be >= 1"))
+	}
+	if retryInitialInterval <= 0 || retryMaxInterval <= 0 || tokenExpiryLeeway <= 0 {
+		errs = append(errs, errors.New("invalid OIDC duration configuration, values must be > 0"))
+	}
+	if retryMaxInterval < retryInitialInterval {
+		errs = append(errs, errors.New(
+			"invalid OIDC retry interval configuration, max interval must be >= initial interval",
+		))
+	}
+	if retryBackoffCoefficient < 1 {
+		errs = append(errs, errors.New("invalid OIDC retry backoff coefficient, value must be >= 1"))
+	}
+
+	return errs
+}
+
 // AccessTokenProvider returns access tokens for outbound authenticated
 // requests.
 type AccessTokenProvider interface {
@@ -30,80 +54,13 @@ type AccessTokenProvider interface {
 	AccessToken(ctx context.Context) (string, error)
 }
 
-// OIDCAccessTokenProviderConfig configures an [OIDCAccessTokenProvider] that
-// uses the OAuth2 client credentials flow.
-type OIDCAccessTokenProviderConfig struct {
-	// ProviderURL is the OIDC issuer URL for endpoint discovery.
-	// Ignored when TokenURL is set.
-	ProviderURL string
-	// TokenURL is the token endpoint. Discovered from ProviderURL if empty.
-	TokenURL     string
-	ClientID     string
-	ClientSecret string
-	Scopes       []string // Optional token scopes.
-	Audience     string   // Optional audience endpoint parameter.
-	// TokenExpiryLeeway is a safety window to refresh tokens before expiry.
-	TokenExpiryLeeway       time.Duration
-	RetryMaxAttempts        int           // Total token endpoint attempts.
-	RetryInitialInterval    time.Duration // Initial retry backoff.
-	RetryMaxInterval        time.Duration // Upper bound for retry backoff.
-	RetryBackoffCoefficient float64       // Exponential backoff multiplier.
-}
+type tokenRequestFunc func(context.Context, *oauth2.Token) (*oauth2.Token, error)
 
-// setDefaults fills zero-valued fields with defaults.
-func (c *OIDCAccessTokenProviderConfig) setDefaults() {
-	if c.TokenExpiryLeeway == 0 {
-		c.TokenExpiryLeeway = defaultTokenExpiryLeeway
-	}
-	if c.RetryMaxAttempts == 0 {
-		c.RetryMaxAttempts = defaultRetryMaxAttempts
-	}
-	if c.RetryInitialInterval == 0 {
-		c.RetryInitialInterval = defaultRetryInitialInterval
-	}
-	if c.RetryMaxInterval == 0 {
-		c.RetryMaxInterval = defaultRetryMaxInterval
-	}
-	if c.RetryBackoffCoefficient == 0 {
-		c.RetryBackoffCoefficient = defaultRetryBackoffCoefficient
-	}
-}
-
-// Validate fills zero-valued fields with defaults and validates the config.
-func (c *OIDCAccessTokenProviderConfig) Validate() error {
-	c.setDefaults()
-
-	var errs []error
-	if c.ProviderURL == "" && c.TokenURL == "" {
-		errs = append(errs, errors.New("missing OIDC providerURL or tokenURL"))
-	}
-	if c.ClientID == "" || c.ClientSecret == "" {
-		errs = append(errs, errors.New("missing OIDC client credentials"))
-	}
-	if c.RetryMaxAttempts < 1 {
-		errs = append(errs, errors.New("invalid OIDC retry max attempts, value must be >= 1"))
-	}
-	if c.RetryInitialInterval <= 0 || c.RetryMaxInterval <= 0 || c.TokenExpiryLeeway <= 0 {
-		errs = append(errs, errors.New("invalid OIDC duration configuration, values must be > 0"))
-	}
-	if c.RetryMaxInterval < c.RetryInitialInterval {
-		errs = append(errs, errors.New(
-			"invalid OIDC retry interval configuration, max interval must be >= initial interval",
-		))
-	}
-	if c.RetryBackoffCoefficient < 1 {
-		errs = append(errs, errors.New("invalid OIDC retry backoff coefficient, value must be >= 1"))
-	}
-
-	return errors.Join(errs...)
-}
-
-// oidcAccessTokenProvider fetches and caches access tokens using the OAuth2
-// client credentials flow.
+// oidcAccessTokenProvider fetches and caches OAuth2 access tokens.
 type oidcAccessTokenProvider struct {
 	mu                      sync.RWMutex // Guards token reads and refresh.
 	token                   *oauth2.Token
-	cc                      clientcredentials.Config
+	tokenRequest            tokenRequestFunc
 	tokenExpiryLeeway       time.Duration
 	retryMaxAttempts        int
 	retryInitialInterval    time.Duration
@@ -113,47 +70,19 @@ type oidcAccessTokenProvider struct {
 
 var _ AccessTokenProvider = (*oidcAccessTokenProvider)(nil)
 
-// NewOIDCAccessTokenProvider builds an [AccessTokenProvider] from OIDC/OAuth2
-// client credentials settings. It calls [OIDCAccessTokenProviderConfig.Validate]
-// before proceeding.
-func NewOIDCAccessTokenProvider(
-	ctx context.Context,
-	cfg OIDCAccessTokenProviderConfig,
-) (AccessTokenProvider, error) {
-	if err := cfg.Validate(); err != nil {
-		return nil, err
-	}
-
-	tokenURL := cfg.TokenURL
+func resolveOIDCTokenURL(ctx context.Context, providerURL, tokenURL string) (string, error) {
 	if tokenURL == "" {
-		provider, err := oidc.NewProvider(ctx, cfg.ProviderURL)
+		provider, err := oidc.NewProvider(ctx, providerURL)
 		if err != nil {
-			return nil, fmt.Errorf("discover OIDC provider: %w", err)
+			return "", fmt.Errorf("discover OIDC provider: %w", err)
 		}
 		tokenURL = provider.Endpoint().TokenURL
 	}
 	if tokenURL == "" {
-		return nil, errors.New("missing OIDC token endpoint URL")
+		return "", errors.New("missing OIDC token endpoint URL")
 	}
 
-	cc := clientcredentials.Config{
-		ClientID:     cfg.ClientID,
-		ClientSecret: cfg.ClientSecret,
-		TokenURL:     tokenURL,
-		Scopes:       cfg.Scopes,
-	}
-	if cfg.Audience != "" {
-		cc.EndpointParams = url.Values{"audience": []string{cfg.Audience}}
-	}
-
-	return &oidcAccessTokenProvider{
-		cc:                      cc,
-		tokenExpiryLeeway:       cfg.TokenExpiryLeeway,
-		retryMaxAttempts:        cfg.RetryMaxAttempts,
-		retryInitialInterval:    cfg.RetryInitialInterval,
-		retryMaxInterval:        cfg.RetryMaxInterval,
-		retryBackoffCoefficient: cfg.RetryBackoffCoefficient,
-	}, nil
+	return tokenURL, nil
 }
 
 // AccessToken returns a cached token when still valid, or fetches a new one.
@@ -198,9 +127,8 @@ func (p *oidcAccessTokenProvider) tokenNeedsRefresh() bool {
 func (p *oidcAccessTokenProvider) requestToken(ctx context.Context) (*oauth2.Token, error) {
 	var err error
 	var token *oauth2.Token
-	ts := p.cc.TokenSource(ctx)
 	for attempt := 1; attempt <= p.retryMaxAttempts; attempt++ {
-		token, err = ts.Token()
+		token, err = p.tokenRequest(ctx, p.token)
 		if err == nil {
 			return token, nil
 		}

@@ -13,11 +13,11 @@ func TestNew(t *testing.T) {
 
 	s := "string"
 
-	p1 := ref.New(s)
+	p1 := new(s)
 	assert.Equal(t, s, *p1)
 	assert.Assert(t, &s != p1)
 
-	p2 := ref.New(s)
+	p2 := new(s)
 	assert.Equal(t, s, *p2)
 	assert.Assert(t, &s != p2)
 }

@@ -41,7 +41,7 @@ func TestAutoHeartbeat(t *testing.T) {
 	w := func(ctx temporalsdk_workflow.Context) error {
 		ctx = temporalsdk_workflow.WithActivityOptions(ctx, temporalsdk_workflow.ActivityOptions{
 			StartToCloseTimeout: time.Second,
-			HeartbeatTimeout:    time.Millisecond,
+			HeartbeatTimeout:    time.Millisecond * 10,
 		})
 		return temporalsdk_workflow.ExecuteActivity(ctx, a).Get(ctx, nil)
 	}

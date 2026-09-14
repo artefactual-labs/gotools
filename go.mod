@@ -1,6 +1,6 @@
 module go.artefactual.dev/tools
 
-go 1.25.0
+go 1.26.0
 
 toolchain go1.26.5
 
@@ -17,12 +17,12 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/gorilla/mux v1.8.1
 	github.com/otiai10/copy v1.14.0
-	go.temporal.io/api v1.29.2
-	go.temporal.io/sdk v1.26.0
+	go.temporal.io/api v1.63.5
+	go.temporal.io/sdk v1.48.0
 	go.uber.org/mock v0.4.0
 	go.uber.org/zap v1.27.1
 	gocloud.dev v0.45.0
-	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
+	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/term v0.45.0
 	gotest.tools/v3 v3.5.2
@@ -74,7 +74,7 @@ require (
 	github.com/google/wire v0.7.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.11 // indirect
 	github.com/googleapis/gax-go/v2 v2.17.0 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -86,8 +86,9 @@ require (
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mholt/archives v0.1.1 // indirect
 	github.com/minio/minlz v1.0.0 // indirect
+	github.com/nexus-rpc/nexus-proto-annotations v0.1.0 // indirect
+	github.com/nexus-rpc/sdk-go v0.7.0 // indirect
 	github.com/nwaples/rardecode/v2 v2.2.0 // indirect
-	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/peterbourgon/ff/v4 v4.0.0-alpha.4 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect

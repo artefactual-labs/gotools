@@ -4,8 +4,10 @@ package ref
 import "golang.org/x/exp/constraints"
 
 // New returns a pointer to x.
+//
+//go:fix inline
 func New[T any](x T) *T {
-	return &x
+	return new(x)
 }
 
 // NewNillable returns a pointer to x.

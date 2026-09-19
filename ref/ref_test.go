@@ -8,16 +8,17 @@ import (
 	"go.artefactual.dev/tools/ref"
 )
 
+//nolint:modernize // Exercise ref.New itself, even when it can be replaced by new.
 func TestNew(t *testing.T) {
 	t.Parallel()
 
 	s := "string"
 
-	p1 := new(s)
+	p1 := ref.New(s)
 	assert.Equal(t, s, *p1)
 	assert.Assert(t, &s != p1)
 
-	p2 := new(s)
+	p2 := ref.New(s)
 	assert.Equal(t, s, *p2)
 	assert.Assert(t, &s != p2)
 }

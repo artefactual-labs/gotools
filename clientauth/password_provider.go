@@ -28,8 +28,12 @@ type OIDCPasswordGrantAccessTokenProviderConfig struct {
 	Password     string
 	Scopes       []string // Optional token scopes.
 	// TokenExpiryLeeway is a safety window to refresh tokens before expiry.
-	TokenExpiryLeeway       time.Duration
-	RetryMaxAttempts        int           // Total token endpoint attempts.
+	TokenExpiryLeeway time.Duration
+	// RetryMaxAttempts limits attempts for a token refresh or password login,
+	// including the first attempt. Zero defaults to 3.
+	// If a refresh fails with invalid_grant, the fallback password login gets
+	// a separate allowance of up to RetryMaxAttempts attempts.
+	RetryMaxAttempts        int
 	RetryInitialInterval    time.Duration // Initial retry backoff.
 	RetryMaxInterval        time.Duration // Upper bound for retry backoff.
 	RetryBackoffCoefficient float64       // Exponential backoff multiplier.
@@ -72,6 +76,8 @@ func (c *OIDCPasswordGrantAccessTokenProviderConfig) Validate() error {
 // NewOIDCPasswordGrantAccessTokenProvider builds an [AccessTokenProvider]
 // using the OAuth2 resource owner password credentials grant. It calls
 // [OIDCPasswordGrantAccessTokenProviderConfig.Validate] before proceeding.
+// If a refresh token is rejected with invalid_grant, it discards the cached
+// tokens and attempts a new password grant using the configured credentials.
 //
 // Deprecated: The OAuth2 security best current practice prohibits use of the
 // password grant. Use it only when integrating with a legacy authorization
@@ -124,10 +130,11 @@ func NewOIDCPasswordGrantAccessTokenProvider(
 
 			return oauthConfig.PasswordCredentialsToken(ctx, cfg.Username, cfg.Password)
 		},
-		tokenExpiryLeeway:       cfg.TokenExpiryLeeway,
-		retryMaxAttempts:        cfg.RetryMaxAttempts,
-		retryInitialInterval:    cfg.RetryInitialInterval,
-		retryMaxInterval:        cfg.RetryMaxInterval,
-		retryBackoffCoefficient: cfg.RetryBackoffCoefficient,
+		passwordGrantRefreshFallback: true,
+		tokenExpiryLeeway:            cfg.TokenExpiryLeeway,
+		retryMaxAttempts:             cfg.RetryMaxAttempts,
+		retryInitialInterval:         cfg.RetryInitialInterval,
+		retryMaxInterval:             cfg.RetryMaxInterval,
+		retryBackoffCoefficient:      cfg.RetryBackoffCoefficient,
 	}, nil
 }

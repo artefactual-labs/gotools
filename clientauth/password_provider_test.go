@@ -156,8 +156,8 @@ func assertPasswordTokenResult(
 		return
 	}
 
-	var retrieveErr *oauth2.RetrieveError
-	assert.Assert(t, errors.As(err, &retrieveErr))
+	retrieveErr, ok := errors.AsType[*oauth2.RetrieveError](err)
+	assert.Assert(t, ok)
 	assert.Equal(t, retrieveErr.Response.StatusCode, want.statusCode)
 	assert.Equal(t, retrieveErr.ErrorCode, want.errorCode)
 	assert.Equal(t, retrieveErr.ErrorDescription, want.errorDescription)
@@ -199,23 +199,47 @@ func TestOIDCPasswordGrantAccessTokenProviderAccessToken(t *testing.T) {
 		errorDescription: "refresh token rejected: refresh-1",
 		wantRequest:      &refreshRequest,
 	}
-	refreshError := passwordTokenResult{
+	rotatedRefreshRequest := refreshRequest
+	rotatedRefreshRequest.refreshToken = "refresh-2"
+	initialResponse := passwordTokenResponse{
+		statusCode:   http.StatusOK,
+		accessToken:  "token-1",
+		refreshToken: "refresh-1",
+		expiresIn:    1,
+		wantRequest:  &confidentialPasswordRequest,
+	}
+	passwordRejected := passwordTokenResponse{
 		statusCode:       http.StatusBadRequest,
 		errorCode:        "invalid_grant",
-		errorDescription: "refresh token rejected: refresh-1",
+		errorDescription: "password login rejected",
+		wantRequest:      &confidentialPasswordRequest,
 	}
+	passwordServerError := passwordTokenResponse{
+		statusCode:  http.StatusBadGateway,
+		errorCode:   "server_error",
+		wantRequest: &confidentialPasswordRequest,
+	}
+	passwordSuccess := passwordTokenResponse{
+		statusCode:  http.StatusOK,
+		accessToken: "token-2",
+		expiresIn:   3600,
+		wantRequest: &confidentialPasswordRequest,
+	}
+	refreshSuccess := passwordSuccess
+	refreshSuccess.wantRequest = &refreshRequest
 
 	type test struct {
-		name            string
-		responses       []passwordTokenResponse
-		wantResults     []passwordTokenResult
-		clientID        string
-		publicClient    bool
-		providerURL     bool
-		scopes          []string
-		concurrentCalls int
-		requestStarted  <-chan struct{}
-		releaseRequest  chan struct{}
+		name             string
+		responses        []passwordTokenResponse
+		wantResults      []passwordTokenResult
+		clientID         string
+		publicClient     bool
+		providerURL      bool
+		scopes           []string
+		retryMaxAttempts int
+		concurrentCalls  int
+		requestStarted   <-chan struct{}
+		releaseRequest   chan struct{}
 	}
 
 	for _, tc := range []test{
@@ -285,22 +309,87 @@ func TestOIDCPasswordGrantAccessTokenProviderAccessToken(t *testing.T) {
 			},
 		},
 		{
-			name: "Does not fall back from rejected refresh token",
+			name: "Reauthenticates after rejected refresh token and caches new tokens",
 			responses: []passwordTokenResponse{
 				{
 					statusCode:   http.StatusOK,
 					accessToken:  "token-1",
 					refreshToken: "refresh-1",
 					expiresIn:    1,
-					wantRequest:  &confidentialPasswordRequest,
+					wantRequest:  &scopedPasswordRequest,
 				},
 				refreshRejected,
-				refreshRejected,
+				{
+					statusCode:   http.StatusOK,
+					accessToken:  "token-2",
+					refreshToken: "refresh-2",
+					expiresIn:    1,
+					wantRequest:  &scopedPasswordRequest,
+				},
+				{
+					statusCode:   http.StatusOK,
+					accessToken:  "token-3",
+					refreshToken: "refresh-3",
+					expiresIn:    3600,
+					wantRequest:  &rotatedRefreshRequest,
+				},
 			},
 			wantResults: []passwordTokenResult{
 				{token: "token-1"},
-				refreshError,
-				refreshError,
+				{token: "token-2"},
+				{token: "token-3"},
+				{token: "token-3"},
+			},
+			scopes:           []string{"openid", "profile"},
+			retryMaxAttempts: 1,
+		},
+		{
+			name: "Discards rejected refresh token even when password login fails",
+			responses: []passwordTokenResponse{
+				initialResponse,
+				refreshRejected,
+				passwordRejected,
+				passwordSuccess,
+			},
+			wantResults: []passwordTokenResult{
+				{token: "token-1"},
+				{
+					statusCode:       http.StatusBadRequest,
+					errorCode:        "invalid_grant",
+					errorDescription: "password login rejected",
+				},
+				{token: "token-2"},
+				{token: "token-2"},
+			},
+		},
+		{
+			name: "Bounds password recovery retries and retains no rejected token",
+			responses: []passwordTokenResponse{
+				initialResponse, refreshRejected,
+				passwordServerError, passwordServerError, passwordServerError,
+				passwordSuccess,
+			},
+			wantResults: []passwordTokenResult{
+				{token: "token-1"},
+				{statusCode: http.StatusBadGateway, errorCode: "server_error"},
+				{token: "token-2"},
+			},
+		},
+		{
+			name: "Does not reauthenticate for other refresh errors",
+			responses: []passwordTokenResponse{
+				initialResponse,
+				{
+					statusCode:  http.StatusUnauthorized,
+					errorCode:   "invalid_client",
+					wantRequest: &refreshRequest,
+				},
+				refreshSuccess,
+			},
+			wantResults: []passwordTokenResult{
+				{token: "token-1"},
+				{statusCode: http.StatusUnauthorized, errorCode: "invalid_client"},
+				{token: "token-2"},
 			},
 		},
 		{
@@ -369,6 +458,9 @@ func TestOIDCPasswordGrantAccessTokenProviderAccessToken(t *testing.T) {
 			}
 			if tc.clientID != "" {
 				cfg.ClientID = tc.clientID
+			}
+			if tc.retryMaxAttempts != 0 {
+				cfg.RetryMaxAttempts = tc.retryMaxAttempts
 			}
 			if tc.publicClient {
 				cfg.ClientSecret = ""

@@ -58,14 +58,17 @@ type tokenRequestFunc func(context.Context, *oauth2.Token) (*oauth2.Token, error
 
 // oidcAccessTokenProvider fetches and caches OAuth2 access tokens.
 type oidcAccessTokenProvider struct {
-	mu                      sync.RWMutex // Guards token reads and refresh.
-	token                   *oauth2.Token
-	tokenRequest            tokenRequestFunc
-	tokenExpiryLeeway       time.Duration
-	retryMaxAttempts        int
-	retryInitialInterval    time.Duration
-	retryMaxInterval        time.Duration
-	retryBackoffCoefficient float64
+	mu           sync.RWMutex // Guards token reads and refresh.
+	token        *oauth2.Token
+	tokenRequest tokenRequestFunc
+	// Used only by the password-grant provider. If a refresh returns invalid_grant,
+	// request new tokens using the configured credentials.
+	passwordGrantRefreshFallback bool
+	tokenExpiryLeeway            time.Duration
+	retryMaxAttempts             int
+	retryInitialInterval         time.Duration
+	retryMaxInterval             time.Duration
+	retryBackoffCoefficient      float64
 }
 
 var _ AccessTokenProvider = (*oidcAccessTokenProvider)(nil)
@@ -103,6 +106,14 @@ func (p *oidcAccessTokenProvider) AccessToken(ctx context.Context) (string, erro
 	}
 
 	token, err := p.requestToken(ctx)
+	retrieveErr, ok := errors.AsType[*oauth2.RetrieveError](err)
+	if p.passwordGrantRefreshFallback && p.token != nil && p.token.RefreshToken != "" &&
+		ok && retrieveErr.ErrorCode == "invalid_grant" {
+		// invalid_grant can mean the refresh token has expired or been revoked.
+		// Discard the rejected tokens and attempt one fresh password login.
+		p.token = nil
+		token, err = p.requestToken(ctx)
+	}
 	if err != nil {
 		return "", fmt.Errorf("request OIDC token: %w", err)
 	}
@@ -170,8 +181,7 @@ func isRetryableErr(err error) bool {
 		return false
 	}
 
-	var rerr *oauth2.RetrieveError
-	if errors.As(err, &rerr) && rerr.Response != nil {
+	if rerr, ok := errors.AsType[*oauth2.RetrieveError](err); ok && rerr.Response != nil {
 		return rerr.Response.StatusCode >= http.StatusInternalServerError
 	}
 

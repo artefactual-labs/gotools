@@ -7,8 +7,59 @@ on:
   pull_request:
     branches:
       - "*"
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
+  verify-actions-lock:
+    timeout-minutes: 10
+    name: Verify action lockfile
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install actions-lock
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh extension install github/gh-actions-lock --pin v0.2.0
+      - name: Verify locked dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh actions-lock --verify
+
+  lint-workflows:
+    name: Lint GitHub Actions
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check workflows and Dependabot configuration
+        uses: jdx/jactionlint@v2.1.0
+        with:
+          strict-exit: "true"
+
   test:
+    name: Test Go ${{ matrix.gover }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
     strategy:
       # Don't abort the entire matrix if one element fails.
       fail-fast: false
@@ -16,60 +67,76 @@ jobs:
         gover:
           - "1.26.x"
           - "1.27.x"
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
       - name: Install Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@v7.0.0
         with:
           go-version: ${{ matrix.gover }}
       - name: Test all
         run: go test -race -cover -coverpkg=./... -coverprofile=coverage.txt ./...
-        env:
-          GOARCH: ${{ matrix.goarch }}
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        uses: codecov/codecov-action@v7.1.1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          # Coverage uploads use the existing repository token without deployment approval.
+          token: ${{ secrets.CODECOV_TOKEN }} # jactionlint ignore=secrets-outside-env
   apidiff:
-    runs-on: ubuntu-24.04
-    if: (github.event.action && 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'breaking-change'))
+    name: Check API compatibility
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    runs-on: ubuntu-26.04
+    if: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'breaking-change') }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@v7.0.0
         with:
           go-version-file: go.mod
       - name: Run api-diff
-        uses: joelanford/go-apidiff@60c4206be8f84348ebda2a3e0c3ac9cb54b8f685 # v0.8.3
+        uses: joelanford/go-apidiff@v0.8.3
   lint:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
+    name: Lint Go
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-26.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@v7.0.0
         with:
           go-version-file: go.mod
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        uses: golangci/golangci-lint-action@v9.3.0
   mod:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
+    name: Check module dependencies
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-26.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Install Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@v7.0.0
         with:
           go-version-file: go.mod
       - name: Check go.mod

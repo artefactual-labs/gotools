@@ -5,10 +5,10 @@ version: 'v0.0.3'
 workflows:
     '.github/workflows/test.yml':
         - 'actions/checkout@v7.0.1'
-        - 'actions/setup-go@v7.0.0'
+        - 'actions/setup-go@v7.1.0'
         - 'codecov/codecov-action@v7.1.1'
         - 'golangci/golangci-lint-action@v9.3.0'
-        - 'jdx/jactionlint@v2.2.0'
+        - 'jdx/jactionlint@v2.6.0'
         - 'joelanford/go-apidiff@v0.8.3'
 dependencies:
     'actions/checkout@v7.0.1':
@@ -21,9 +21,9 @@ dependencies:
         commit: 'sha1-ed597411d8f924073f98dfc5c65a23a2325f34cd'
         owner_id: 44036562
         repo_id: 205262760
-    'actions/setup-go@v7.0.0':
-        ref: 'v7.0.0'
-        commit: 'sha1-b7ad1dad31e06c5925ef5d2fc7ad053ef454303e'
+    'actions/setup-go@v7.1.0':
+        ref: 'v7.1.0'
+        commit: 'sha1-d8cbb8045d7f43706b9177cceb36c1f91a6644d5'
         owner_id: 44036562
         repo_id: 192624594
     'codecov/codecov-action@v7.1.1':
@@ -43,9 +43,9 @@ dependencies:
         commit: 'sha1-ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a'
         owner_id: 35628013
         repo_id: 232539879
-    'jdx/jactionlint@v2.2.0':
-        ref: 'v2.2.0'
-        commit: 'sha1-1027f0a131ab98bc7e191d995bfa15dbed5bbf8f'
+    'jdx/jactionlint@v2.6.0':
+        ref: 'v2.6.0'
+        commit: 'sha1-72c00452809bcca05b8bc12acdcf15dd7a9c1c5e'
         owner_id: 216188
         repo_id: 1404951382
         uses:

@@ -51,7 +51,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check workflows and Dependabot configuration
-        uses: jdx/jactionlint@v2.2.0
+        uses: jdx/jactionlint@v2.6.0
         with:
           strict-exit: "true"
 
@@ -74,7 +74,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Go
-        uses: actions/setup-go@v7.0.0
+        uses: actions/setup-go@v7.1.0
         with:
           go-version: ${{ matrix.gover }}
       - name: Test all
@@ -98,7 +98,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Install Go
-        uses: actions/setup-go@v7.0.0
+        uses: actions/setup-go@v7.1.0
         with:
           go-version-file: go.mod
       - name: Run api-diff
@@ -117,7 +117,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Install Go
-        uses: actions/setup-go@v7.0.0
+        uses: actions/setup-go@v7.1.0
         with:
           go-version-file: go.mod
       - name: Run golangci-lint
@@ -136,7 +136,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Install Go
-        uses: actions/setup-go@v7.0.0
+        uses: actions/setup-go@v7.1.0
         with:
           go-version-file: go.mod
       - name: Check go.mod
